@@ -759,8 +759,7 @@ class BaseSession(requests.Session):
     """
 
     def __init__(self, mock_browser : bool = True, verify : bool = True,
-                 browser_args : list = ['--no-sandbox'],
-                 browser_options : dict[str, any] = None):
+                 browser_args : list = ['--no-sandbox'], pyppeteer_args : dict = {}):
         super().__init__()
 
         # Mock a web browser's user agent.
@@ -771,8 +770,7 @@ class BaseSession(requests.Session):
         self.verify = verify
 
         self.__browser_args = browser_args
-        self.__browser_options = browser_options
-
+        self.__pyppeteer_args = pyppeteer_args
 
     def response_hook(self, response, **kwargs) -> HTMLResponse:
         """ Change response encoding and replace it by a HTMLResponse. """
@@ -782,8 +780,13 @@ class BaseSession(requests.Session):
 
     @property
     async def browser(self):
+        browser_args = {
+            'headless': True,
+            'args': self.__browser_args
+        }
+        browser_args.update(self.__pyppeteer_args)
         if not hasattr(self, "_browser"):
-            self._browser = await pyppeteer.launch(ignoreHTTPSErrors=not(self.verify), headless=True, args=self.__browser_args, options=self.__browser_options)
+            self._browser = await pyppeteer.launch(ignoreHTTPSErrors=not(self.verify), **browser_args)
 
         return self._browser
 
